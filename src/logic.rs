@@ -31,7 +31,7 @@ pub fn end(_game: &Game, _turn: &u32, _board: &Board, _you: &Battlesnake) {
 // Valid moves are "up", "down", "left", or "right"
 // See https://docs.battlesnake.com/api/example-move for available data
 pub fn get_move(_game: &Game, turn: &u32, board: &Board, you: &Battlesnake) -> Value {
-    // Find all the safe places on the board
+    // Find all the unsafe places on the board
     let mut unsafe_spaces: HashSet<(u32, u32)> = board
         .snakes
         .iter()
@@ -71,6 +71,11 @@ pub fn get_move(_game: &Game, turn: &u32, board: &Board, you: &Battlesnake) -> V
         }
     }
 
+    // Add all the hazards
+    for hazard in &board.hazards {
+        unsafe_spaces.insert((hazard.x, hazard.y));
+    }
+
     // Find the ones that are beside us, and put them in a vec
     let mut safe_moves = Vec::new();
     for possible_move in &[
@@ -84,9 +89,9 @@ pub fn get_move(_game: &Game, turn: &u32, board: &Board, you: &Battlesnake) -> V
         let new_x = head.x as i32 + x;
         let new_y = head.y as i32 + y;
 
-        if new_x > 0
+        if new_x >= 0
             && new_x < board.width as i32
-            && new_y > 0
+            && new_y >= 0
             && new_y < board.height as i32
             && !unsafe_spaces.contains(&(new_x as u32, new_y as u32))
         {

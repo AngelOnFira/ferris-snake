@@ -32,7 +32,7 @@ pub fn end(_game: &Game, _turn: &u32, _board: &Board, _you: &Battlesnake) {
 // See https://docs.battlesnake.com/api/example-move for available data
 pub fn get_move(_game: &Game, turn: &u32, board: &Board, you: &Battlesnake) -> Value {
     // Find all the safe places on the board
-    let unsafe_spaces: HashSet<(u32, u32)> = board
+    let mut unsafe_spaces: HashSet<(u32, u32)> = board
         .snakes
         .iter()
         .map(|snake| {
@@ -45,6 +45,31 @@ pub fn get_move(_game: &Game, turn: &u32, board: &Board, you: &Battlesnake) -> V
         })
         .flatten()
         .collect();
+
+    // Add everywhere that a snake (not us) could move to
+    for snake in &board.snakes {
+        if snake.id == you.id {
+            continue;
+        }
+
+        let head = &snake.head;
+
+        if head.x > 0 {
+            unsafe_spaces.insert((head.x - 1, head.y));
+        }
+
+        if head.x < board.width - 1 {
+            unsafe_spaces.insert((head.x + 1, head.y));
+        }
+
+        if head.y > 0 {
+            unsafe_spaces.insert((head.x, head.y - 1));
+        }
+
+        if head.y < board.height - 1 {
+            unsafe_spaces.insert((head.x, head.y + 1));
+        }
+    }
 
     // Find the ones that are beside us, and put them in a vec
     let mut safe_moves = Vec::new();
@@ -70,7 +95,7 @@ pub fn get_move(_game: &Game, turn: &u32, board: &Board, you: &Battlesnake) -> V
     }
 
     // Choose a random move from the safe ones
-    let chosen = safe_moves.choose(&mut rand::thread_rng()).unwrap();
+    let chosen = safe_moves.choose(&mut rand::thread_rng()).unwrap_or(&&"up");
 
     // TODO: Step 4 - Move towards food instead of random, to regain health and survive longer
     // let food = &board.food;
